@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Exploding Kittens 🐱💣</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Sarabun:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0b10;--s1:#141320;--s2:#1d1c2e;--s3:#252440;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#f0ece0;--muted:rgba(240,236,224,0.42);
+  --bomb:#ff4444;--defuse:#44dd88;--gold:#f5c532;
+  --nope:#ff6b35;--skip:#60b8ff;--atk:#ff7eb3;--see:#c084fc;
+  --shuf:#fbbf24;--favor:#34d399;--cat:#a78bfa;
+  --r:16px;--rm:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+body{display:flex;justify-content:center;}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 70% 60% at 15% 0%,rgba(255,68,68,.05) 0%,transparent 55%),
+             radial-gradient(ellipse 60% 50% at 85% 100%,rgba(96,184,255,.05) 0%,transparent 55%);
+  pointer-events:none;z-index:0;}
+
+.app{position:relative;z-index:1;width:100%;max-width:520px;padding:1rem 1rem 6rem;min-height:100vh;}
+
+/* ── SCREEN SYSTEM ── */
+.screen{display:none;animation:up .3s ease;}
+.screen.active{display:block;}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── LOGO ── */
+.logo{text-align:center;padding:1.2rem 0 1rem;}
+.logo-main{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;
+  background:linear-gradient(135deg,#ff4444 0%,#ff9900 50%,#f5c532 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:-1px;}
+.logo-sub{font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:3px;}
+
+/* ── CARD UI ── */
+.card{background:var(--s1);border:0.5px solid var(--border);border-radius:var(--r);padding:1.25rem;margin-bottom:.75rem;}
+.card-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:.9rem;}
+.section-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.4rem;}
+
+/* ── INPUTS ── */
+.field{margin-bottom:.8rem;}
+.field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:5px;}
+.field input{width:100%;background:var(--s2);border:0.5px solid var(--border);border-radius:var(--rm);
+  color:var(--text);font-family:'Sarabun',sans-serif;font-size:15px;padding:.65rem 1rem;outline:none;transition:border-color .2s;}
+.field input:focus{border-color:rgba(255,255,255,.25);}
+.field input::placeholder{color:var(--muted);}
+
+/* ── BUTTONS ── */
+.btn{width:100%;padding:.8rem;border:none;border-radius:50px;font-family:'Sarabun',sans-serif;
+  font-size:15px;font-weight:600;cursor:pointer;transition:transform .15s,box-shadow .15s,opacity .2s;}
+.btn:active:not(:disabled){transform:scale(.97);}
+.btn:disabled{opacity:.38;cursor:default;}
+.btn-fire{background:linear-gradient(135deg,#ff4444,#ff9900);color:#fff;box-shadow:0 4px 18px rgba(255,80,0,.25);}
+.btn-fire:hover:not(:disabled){box-shadow:0 8px 26px rgba(255,80,0,.4);transform:translateY(-2px);}
+.btn-outline{background:transparent;color:var(--text);border:0.5px solid var(--border2);}
+.btn-outline:hover:not(:disabled){background:var(--s2);}
+.btn-sm{width:auto;padding:.45rem 1.2rem;font-size:13px;}
+.btn-xs{width:auto;padding:.3rem .9rem;font-size:12px;border-radius:20px;}
+
+/* ── CONFIG SCREEN ── */
+.cfg-notice{background:rgba(245,197,50,.06);border:0.5px solid rgba(245,197,50,.2);
+  border-radius:var(--rm);padding:.9rem 1rem;margin-bottom:.75rem;font-size:13px;line-height:1.7;}
+.cfg-notice code{background:rgba(245,197,50,.12);color:var(--gold);padding:1px 6px;border-radius:5px;font-size:11px;}
+.cfg-notice a{color:var(--gold);text-decoration:none;}
+
+/* ── HOME ── */
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.75rem;}
+.home-tile{background:var(--s1);border:0.5px solid var(--border);border-radius:var(--r);
+  padding:1.2rem 1rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;}
+.home-tile:hover{background:var(--s2);border-color:var(--border2);}
+.ht-icon{font-size:2rem;margin-bottom:.4rem;}
+.ht-label{font-size:14px;font-weight:500;}
+.ht-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* ── ROOM CODE ── */
+.room-code-wrap{background:var(--s2);border-radius:var(--rm);padding:1.1rem;margin-bottom:.75rem;text-align:center;}
+.rc-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:4px;}
+.rc-code{font-family:'Space Mono',monospace;font-size:2.8rem;font-weight:700;color:var(--gold);letter-spacing:8px;line-height:1;}
+.rc-hint{font-size:12px;color:var(--muted);margin-top:6px;}
+
+/* ── LOBBY PLAYERS ── */
+.lobby-players{display:flex;flex-direction:column;gap:8px;margin-bottom:.75rem;}
+.lp-row{display:flex;align-items:center;gap:10px;background:var(--s2);
+  border-radius:var(--rm);padding:.7rem 1rem;}
+.lp-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;flex-shrink:0;}
+.lp-name{font-size:14px;font-weight:500;flex:1;}
+.lp-host-badge{font-size:10px;background:rgba(245,197,50,.15);color:var(--gold);
+  padding:2px 8px;border-radius:10px;letter-spacing:1px;}
+.lp-empty{opacity:.35;font-style:italic;font-size:13px;}
+.dot-pulse{display:inline-flex;gap:3px;align-items:center;}
+.dot-pulse span{width:4px;height:4px;border-radius:50%;background:var(--muted);animation:dp 1.2s ease infinite;}
+.dot-pulse span:nth-child(2){animation-delay:.2s;}
+.dot-pulse span:nth-child(3){animation-delay:.4s;}
+@keyframes dp{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* ── GAME SCREEN ── */
+.game-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
+.deck-info{text-align:center;}
+.deck-count{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;}
+.deck-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;}
+.deck-pile{background:var(--s2);border:2px dashed var(--border2);border-radius:var(--rm);
+  padding:1rem;cursor:pointer;transition:border-color .2s,background .2s;text-align:center;}
+.deck-pile:hover.can-draw{border-color:var(--gold);background:rgba(245,197,50,.06);}
+.deck-pile.can-draw{border-color:rgba(245,197,50,.4);}
+.deck-pile-label{font-size:12px;color:var(--muted);margin-top:4px;}
+
+/* ── PLAYERS LIST SIDEBAR (game) ── */
+.players-mini{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem;}
+.pm-chip{display:flex;align-items:center;gap:5px;background:var(--s2);
+  border:0.5px solid var(--border);border-radius:20px;padding:4px 10px;}
+.pm-chip.active-turn{border-color:var(--gold);background:rgba(245,197,50,.1);}
+.pm-chip.dead{opacity:.3;text-decoration:line-through;}
+.pm-dot{width:7px;height:7px;border-radius:50%;}
+.pm-name{font-size:12px;}
+.pm-cards{font-size:11px;color:var(--muted);}
+
+/* ── HAND ── */
+.hand-section{margin-bottom:.75rem;}
+.hand-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.5rem;}
+.hand-cards{display:flex;flex-wrap:wrap;gap:6px;}
+
+/* ── PLAYING CARD ── */
+.pcard{
+  position:relative;background:var(--s2);border:1px solid var(--border2);
+  border-radius:10px;padding:.5rem .55rem;cursor:pointer;
+  transition:transform .15s,border-color .2s,box-shadow .15s;
+  min-width:58px;text-align:center;user-select:none;
+}
+.pcard:hover:not(.disabled){transform:translateY(-6px);box-shadow:0 8px 20px rgba(0,0,0,.4);}
+.pcard.selected{transform:translateY(-8px);box-shadow:0 0 0 2px var(--gold);}
+.pcard.disabled{opacity:.4;cursor:default;}
+.pcard-emoji{font-size:1.5rem;display:block;line-height:1;}
+.pcard-name{font-size:9px;margin-top:3px;line-height:1.2;font-family:'Space Mono',monospace;color:var(--muted);}
+.pcard-count{position:absolute;top:-5px;right:-5px;background:var(--bomb);color:#fff;
+  font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;}
+
+/* ── CARD COLORS ── */
+.pcard[data-type="exploding"]{border-color:var(--bomb);background:rgba(255,68,68,.12);}
+.pcard[data-type="defuse"]{border-color:var(--defuse);background:rgba(68,221,136,.1);}
+.pcard[data-type="nope"]{border-color:var(--nope);}
+.pcard[data-type="skip"]{border-color:var(--skip);}
+.pcard[data-type="attack"]{border-color:var(--atk);}
+.pcard[data-type="see_future"]{border-color:var(--see);}
+.pcard[data-type="shuffle"]{border-color:var(--shuf);}
+.pcard[data-type="favor"]{border-color:var(--favor);}
+.pcard[data-type="alter_future"]{border-color:#e879f9;}
+.pcard[data-type^="cat"]{border-color:var(--cat);}
+
+/* ── ACTION BAR ── */
+.action-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:520px;background:rgba(12,11,16,.92);
+  backdrop-filter:blur(12px);border-top:0.5px solid var(--border);
+  padding:.75rem 1rem;z-index:50;}
+.ab-inner{display:flex;gap:8px;align-items:center;}
+.ab-turn-info{flex:1;font-size:13px;color:var(--muted);line-height:1.4;}
+.ab-turn-name{font-weight:600;color:var(--text);font-size:14px;}
+
+/* ── LOG ── */
+.log-box{background:var(--s2);border-radius:var(--rm);padding:.7rem .9rem;
+  max-height:130px;overflow-y:auto;margin-bottom:.75rem;}
+.log-entry{font-size:12px;color:var(--muted);padding:2px 0;border-bottom:0.5px solid var(--border);}
+.log-entry:last-child{border-bottom:none;color:var(--text);}
+.log-entry .le-emoji{margin-right:4px;}
+
+/* ── MODAL ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);
+  display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem;
+  animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--s1);border:0.5px solid var(--border2);border-radius:var(--r);
+  padding:1.5rem;width:100%;max-width:400px;animation:up .25s ease;}
+.modal-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:.5rem;}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:1.1rem;line-height:1.6;}
+.modal-btns{display:flex;flex-direction:column;gap:8px;}
+.modal-option{background:var(--s2);border:0.5px solid var(--border);border-radius:var(--rm);
+  padding:.75rem 1rem;cursor:pointer;font-size:14px;transition:border-color .15s,background .15s;text-align:left;}
+.modal-option:hover{border-color:var(--border2);background:var(--s3);}
+
+/* ── NOPE TOAST ── */
+.nope-banner{position:fixed;top:1rem;left:50%;transform:translateX(-50%);
+  background:var(--nope);color:#fff;border-radius:50px;padding:.6rem 1.5rem;
+  font-size:14px;font-weight:600;z-index:200;animation:up .2s ease;
+  box-shadow:0 4px 20px rgba(255,107,53,.4);}
+
+/* ── SEE FUTURE OVERLAY ── */
+.see-future-cards{display:flex;gap:8px;justify-content:center;margin:.8rem 0;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:5.5rem;left:50%;transform:translateX(-50%) translateY(60px);
+  background:var(--s1);border:0.5px solid var(--border2);border-radius:50px;
+  padding:.55rem 1.3rem;font-size:13px;color:var(--text);
+  transition:transform .3s ease;z-index:150;white-space:nowrap;
+  box-shadow:0 6px 20px rgba(0,0,0,.4);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── GAMEOVER ── */
+.go-card{background:var(--s1);border:0.5px solid var(--border);border-radius:var(--r);
+  padding:2rem;text-align:center;margin-bottom:.75rem;}
+.go-trophy{font-size:4rem;margin-bottom:.75rem;}
+.go-title{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin-bottom:.25rem;}
+.go-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;}
+.go-ranking{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem;text-align:left;}
+.go-rank-row{display:flex;align-items:center;gap:10px;background:var(--s2);
+  border-radius:var(--rm);padding:.65rem 1rem;}
+.go-rank-num{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;width:24px;}
+.go-rank-name{flex:1;font-size:14px;}
+.go-rank-status{font-size:11px;color:var(--muted);}
+
+/* colors per player index */
+.pc0{background:#60b8ff;color:#0c0b10;}
+.pc1{background:#ff7eb3;color:#0c0b10;}
+.pc2{background:#f5c532;color:#0c0b10;}
+.pc3{background:#44dd88;color:#0c0b10;}
+.pc4{background:#c084fc;color:#0c0b10;}
+.pc5{background:#ff6b35;color:#0c0b10;}
+.pc6{background:#34d399;color:#0c0b10;}
+.pc7{background:#fbbf24;color:#0c0b10;}
+
+.dot0{background:#60b8ff;}.dot1{background:#ff7eb3;}.dot2{background:#f5c532;}
+.dot3{background:#44dd88;}.dot4{background:#c084fc;}.dot5{background:#ff6b35;}
+.dot6{background:#34d399;}.dot7{background:#fbbf24;}
+
+@media(max-width:400px){.pcard{min-width:50px;}.pcard-emoji{font-size:1.3rem;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="logo">
+    <div class="logo-main">🐱💣 Exploding Kittens</div>
+    <div class="logo-sub">Realtime Multiplayer · 2–8 คน</div>
+  </div>
+
+  <!-- ══ CONFIG ══ -->
+  <div class="screen active" id="scConfig">
+    <div class="cfg-notice">
+      ⚙️ <strong>ตั้งค่า Firebase ก่อน (ครั้งเดียว)</strong><br>
+      1. <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → สร้างโปรเจกต์<br>
+      2. เพิ่ม Web App → คัดลอก config<br>
+      3. เปิด <strong>Realtime Database</strong> → <strong>Start in test mode</strong>
+    </div>
+    <div class="card">
+      <div class="card-title">🔑 Firebase Config</div>
+      <div class="field"><label>API Key</label><input id="cfgKey" placeholder="AIzaSy..."></div>
+      <div class="field"><label>Auth Domain</label><input id="cfgAuth" placeholder="app.firebaseapp.com"></div>
+      <div class="field"><label>Database URL</label><input id="cfgDb" placeholder="https://app-rtdb.firebaseio.com"></div>
+      <div class="field"><label>Project ID</label><input id="cfgProj" placeholder="my-project"></div>
+      <button class="btn btn-fire" onclick="initFB()">เชื่อมต่อและเริ่ม →</button>
+    </div>
+    <div class="cfg-notice" style="margin-top:.5rem;font-size:12px;">
+      📋 <strong>Firebase Rules</strong> (วางใน Realtime Database → Rules)<br>
+      <code style="display:block;margin-top:.4rem;padding:.5rem;background:rgba(0,0,0,.3);border-radius:6px;font-size:11px;white-space:pre-wrap;line-height:1.6">{
+  "rules": {
+    "ek_rooms": {
+      "$roomId": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}</code>
+    </div>
+  </div>
+
+  <!-- ══ HOME ══ -->
+  <div class="screen" id="scHome">
+    <div class="home-grid">
+      <div class="home-tile" onclick="goCreate()">
+        <div class="ht-icon">🏠</div>
+        <div class="ht-label">สร้างห้อง</div>
+        <div class="ht-sub">เป็นโฮสต์</div>
+      </div>
+      <div class="home-tile" onclick="goJoin()">
+        <div class="ht-icon">🚪</div>
+        <div class="ht-label">เข้าร่วม</div>
+        <div class="ht-sub">มีโค้ดแล้ว</div>
+      </div>
+    </div>
+    <div style="text-align:center;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="show('scHowTo')" style="font-size:12px;">📖 วิธีเล่น</button>
+      <!-- <button class="btn btn-outline btn-sm" onclick="resetCfg()" style="opacity:.5;font-size:12px;">⚙️ Config</button> -->
+    </div>
+  </div>
+
+  <!-- ══ CREATE ══ -->
+  <div class="screen" id="scCreate">
+    <div class="card">
+      <div class="card-title">🏠 สร้างห้องใหม่</div>
+      <div class="field"><label>ชื่อของคุณ</label><input id="createName" placeholder="ชื่อเล่น..." maxlength="14"></div>
+      <button class="btn btn-fire" onclick="createRoom()">สร้างห้อง</button>
+      <button class="btn btn-outline" style="margin-top:.5rem" onclick="show('scHome')">← กลับ</button>
+    </div>
+  </div>
+
+  <!-- ══ JOIN ══ -->
+  <div class="screen" id="scJoin">
+    <div class="card">
+      <div class="card-title">🚪 เข้าร่วมห้อง</div>
+      <div class="field"><label>ชื่อของคุณ</label><input id="joinName" placeholder="ชื่อเล่น..." maxlength="14"></div>
+      <div class="field">
+        <label>Room Code</label>
+        <input id="joinCode" placeholder="A3F7" maxlength="4"
+          style="text-transform:uppercase;text-align:center;font-family:'Space Mono',monospace;font-size:2rem;letter-spacing:6px;">
+      </div>
+      <button class="btn btn-fire" onclick="joinRoom()">เข้าร่วม!</button>
+      <button class="btn btn-outline" style="margin-top:.5rem" onclick="show('scHome')">← กลับ</button>
+    </div>
+  </div>
+
+  <!-- ══ HOW TO PLAY ══ -->
+  <div class="screen" id="scHowTo">
+    <div class="card">
+      <div class="card-title">📖 วิธีเล่น</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.9;">
+        <p><strong style="color:var(--text)">เป้าหมาย</strong> — อย่าหยิบ 💣 Exploding Kitten! คนสุดท้ายที่รอดชนะ</p>
+        <br>
+        <p><strong style="color:var(--text)">เทิร์น</strong> — เล่นไพ่ก่อน แล้วต้องหยิบ 1 ใบจากกอง (ยกเว้นเล่น Skip/Attack)</p>
+        <br>
+        <p><strong style="color:var(--text)">หยิบ 💣</strong> — ถ้ามี 🙅 Defuse ปลอดภัย ใส่ระเบิดกลับกองตำแหน่งที่ต้องการ ถ้าไม่มี = ตาย!</p>
+        <br>
+        <p><strong style="color:var(--text)">🙈 Nope</strong> — ใช้แย้งแอ็กชั่นคนอื่นได้ทุกเวลา (ภายใน 5 วิหลังเล่น)</p>
+        <br>
+        <p><strong style="color:var(--text)">🐱 ไพ่แมว</strong> — เล่นแยกไม่ได้ ต้องจับคู่ (2 ใบ = ขโมยสุ่ม, 3 ใบ = ระบุไพ่)</p>
+      </div>
+      <button class="btn btn-outline" style="margin-top:1rem" onclick="show('scHome')">← กลับ</button>
+    </div>
+  </div>
+
+  <!-- ══ LOBBY ══ -->
+  <div class="screen" id="scLobby">
+    <div class="room-code-wrap">
+      <div class="rc-label">Room Code — ส่งให้เพื่อน!</div>
+      <div class="rc-code" id="lobbyCode">—</div>
+      <div class="rc-hint">เพื่อนเลือก "เข้าร่วม" แล้วพิมพ์โค้ดนี้</div>
+    </div>
+    <div class="card">
+      <div class="card-title">ผู้เล่น (<span id="lobbyCount">0</span>/8)</div>
+      <div class="lobby-players" id="lobbyPlayers"></div>
+      <button class="btn btn-fire" id="startBtn" disabled onclick="hostStartGame()">เริ่มเกม! 🐱💣</button>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:.5rem;" id="startHint">ต้องการ 2 คนขึ้นไป · โฮสต์เป็นผู้เริ่ม</p>
+    </div>
+  </div>
+
+  <!-- ══ GAME ══ -->
+  <div class="screen" id="scGame">
+    <!-- players row -->
+    <div class="players-mini" id="playersMini"></div>
+
+    <!-- deck + discard -->
+    <div class="game-top">
+      <div>
+        <div class="deck-pile" id="deckPile" onclick="drawCard()">
+          <div style="font-size:2.5rem">🂠</div>
+          <div class="deck-pile-label">หยิบไพ่</div>
+        </div>
+      </div>
+      <div class="deck-info">
+        <div class="deck-count" id="deckCount">—</div>
+        <div class="deck-label">ไพ่เหลือ</div>
+      </div>
+      <div style="text-align:center">
+        <div id="discardTop" style="font-size:2.2rem;line-height:1;">🂠</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">กองทิ้ง</div>
+      </div>
+    </div>
+
+    <!-- log -->
+    <div class="log-box" id="logBox"></div>
+
+    <!-- my hand -->
+    <div class="hand-section">
+      <div class="hand-label">ไพ่ในมือคุณ (<span id="handCount">0</span>)</div>
+      <div class="hand-cards" id="handCards"></div>
+    </div>
+
+    <!-- action bar -->
+    <div class="action-bar">
+      <div class="ab-inner">
+        <div class="ab-turn-info">
+          <div class="ab-turn-name" id="turnName">—</div>
+          <div id="turnSub" style="font-size:11px;color:var(--muted)">กำลังรอ...</div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="playBtn" onclick="playSelected()" disabled>เล่นไพ่</button>
+        <button class="btn btn-outline btn-sm" id="nopeBtn" onclick="playNope()" style="border-color:var(--nope);color:var(--nope);display:none">NOPE!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ GAMEOVER ══ -->
+  <div class="screen" id="scGameover">
+    <div class="go-card">
+      <div class="go-trophy">🏆</div>
+      <div class="go-title" id="goTitle">—</div>
+      <div class="go-sub" id="goSub"></div>
+      <div class="go-ranking" id="goRanking"></div>
+      <button class="btn btn-fire" onclick="playAgain()">เล่นใหม่!</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getDatabase,ref,set,get,update,onValue,off,push,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ════════════════════════════════
+// CARD DEFINITIONS
+// ════════════════════════════════
+const CARD_DEF={
+  exploding:    {emoji:'💣',name:'Exploding Kitten',color:'var(--bomb)',   desc:'ถ้าหยิบแล้วไม่มี Defuse — ตาย! ออกจากเกมทันที'},
+  defuse:       {emoji:'🙅',name:'Defuse',         color:'var(--defuse)', desc:'ปลดชนวนระเบิดได้ 1 ครั้ง แล้วใส่ระเบิดกลับกองในตำแหน่งที่ต้องการ'},
+  nope:         {emoji:'🙈',name:'Nope!',           color:'var(--nope)',   desc:'ยกเลิกแอ็กชั่นของคนอื่นได้ทันที (ใช้ได้เสมอภายใน 5 วิ)'},
+  attack:       {emoji:'🎯',name:'Attack',          color:'var(--atk)',    desc:'ข้ามเทิร์นตัวเอง บังคับคนถัดไปหยิบ 2 ใบ'},
+  skip:         {emoji:'⏭️',name:'Skip',            color:'var(--skip)',   desc:'ข้ามเทิร์นโดยไม่ต้องหยิบไพ่ (ลด 1 ใบถ้าถูก Attack)'},
+  favor:        {emoji:'🙏',name:'Favor',           color:'var(--favor)',  desc:'บังคับคนที่เลือกส่งไพ่ 1 ใบมาให้คุณ (เขาเลือกเองว่าจะให้อะไร)'},
+  shuffle:      {emoji:'🔀',name:'Shuffle',         color:'var(--shuf)',   desc:'สับกองไพ่ใหม่แบบสุ่ม'},
+  see_future:   {emoji:'👀',name:'See the Future',  color:'var(--see)',    desc:'แอบดู 3 ใบบนสุดของกอง (เฉพาะตัวเองเห็น)'},
+  alter_future: {emoji:'✏️',name:'Alter the Future',color:'#e879f9',       desc:'ดูและเรียงลำดับ 3 ใบบนสุดของกองใหม่ได้'},
+  reverse:      {emoji:'🔄',name:'Reverse',         color:'#818cf8',       desc:'กลับทิศทางผลัดเทิร์น (ซ้าย→ขวา หรือขวา→ซ้าย)'},
+  targeted_attack:{emoji:'💢',name:'Targeted Attack',color:'#f43f5e',      desc:'เลือกคนที่จะถูกบังคับหยิบ 2 ใบ แทนที่จะเป็นคนถัดไป'},
+  cat_taco:     {emoji:'🌮',name:'Taco Cat',        color:'var(--cat)',    desc:'ไพ่แมว: จับคู่ 2 ใบ = ขโมยไพ่สุ่ม, 3 ใบ = ระบุชื่อไพ่ที่ต้องการ'},
+  cat_beard:    {emoji:'🧔',name:'Beard Cat',       color:'var(--cat)',    desc:'ไพ่แมว: จับคู่ 2 ใบ = ขโมยไพ่สุ่ม, 3 ใบ = ระบุชื่อไพ่ที่ต้องการ'},
+  cat_melon:    {emoji:'🍉',name:'Watermelon Cat',  color:'var(--cat)',    desc:'ไพ่แมว: จับคู่ 2 ใบ = ขโมยไพ่สุ่ม, 3 ใบ = ระบุชื่อไพ่ที่ต้องการ'},
+  cat_potato:   {emoji:'🥔',name:'Potato Cat',      color:'var(--cat)',    desc:'ไพ่แมว: จับคู่ 2 ใบ = ขโมยไพ่สุ่ม, 3 ใบ = ระบุชื่อไพ่ที่ต้องการ'},
+  cat_rainbow:  {emoji:'🌈',name:'Rainbow Cat',     color:'var(--cat)',    desc:'ไพ่แมว: จับคู่ 2 ใบ = ขโมยไพ่สุ่ม, 3 ใบ = ระบุชื่อไพ่ที่ต้องการ'},
+};
+
+// Build deck for N players
+function buildDeck(numPlayers){
+  const deck=[];
+  const add=(type,n)=>{for(let i=0;i<n;i++)deck.push({type,id:Math.random().toString(36).substr(2,9)});};
+  // Defuse: 6 total, each player starts with 1, rest in deck
+  const defuseInDeck=Math.max(6-numPlayers,2);
+  add('defuse',defuseInDeck);
+  add('nope',5);add('attack',4);add('skip',4);add('favor',4);
+  add('shuffle',4);add('see_future',5);add('alter_future',4);
+  add('reverse',4);add('targeted_attack',3);
+  add('cat_taco',4);add('cat_beard',4);add('cat_melon',4);add('cat_potato',4);add('cat_rainbow',4);
+  // Exploding kittens: numPlayers-1
+  add('exploding',numPlayers-1);
+  return shuffle(deck);
+}
+
+function buildInitialHands(players,deck){
+  // Each player gets 4 random cards + 1 defuse
+  const hands={};
+  players.forEach(p=>{
+    hands[p.uid]=[{type:'defuse',id:'d_'+p.uid}];
+    for(let i=0;i<4;i++){
+      const card=deck.pop();
+      hands[p.uid].push(card);
+    }
+  });
+  return{hands,deck};
+}
+
+// ════════════════════════════════
+// UTILS
+// ════════════════════════════════
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function rnd4(){return Math.random().toString(36).substring(2,6).toUpperCase();}
+function uid(){return Math.random().toString(36).substring(2,12);}
+
+// ════════════════════════════════
+// STATE
+// ════════════════════════════════
+let db=null,roomRef=null,roomId=null,myUid=null,myName='',isHost=false;
+let G=null; // live game state
+let selectedCards=[]; // selected card ids
+let nopeWindow=false,nopeTimer=null;
+let unsubFns=[];
+
+// ════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════
+window.show=id=>{
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+};
+
+function toast(msg,ms=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),ms);
+}
+
+function modal(html,onClose){
+  closeModal();
+  const b=document.createElement('div');
+  b.className='modal-backdrop';
+  b.id='activeModal';
+  b.innerHTML=`<div class="modal">${html}</div>`;
+  if(onClose)b.addEventListener('click',e=>{if(e.target===b){closeModal();onClose();}});
+  document.getElementById('modalRoot').appendChild(b);
+}
+function closeModal(){
+  const m=document.getElementById('activeModal');
+  if(m)m.remove();
+}
+
+function playerColor(idx){return `pc${idx%8}`;}
+function dotColor(idx){return `dot${idx%8}`;}
+
+// ════════════════════════════════
+// FIREBASE INIT
+// ════════════════════════════════
+window.initFB=function(){
+  const cfg={
+    apiKey:document.getElementById('cfgKey').value.trim(),
+    authDomain:document.getElementById('cfgAuth').value.trim(),
+    databaseURL:document.getElementById('cfgDb').value.trim(),
+    projectId:document.getElementById('cfgProj').value.trim(),
+  };
+  if(!cfg.apiKey||!cfg.databaseURL){toast('กรุณากรอก API Key และ Database URL');return;}
+  try{
+    const app=initializeApp(cfg);
+    db=getDatabase(app);
+    localStorage.setItem('ekCfg',JSON.stringify(cfg));
+    toast('✅ เชื่อมต่อสำเร็จ!');
+    show('scHome');
+  }catch(e){toast('❌ '+e.message);}
+};
+
+window.resetCfg=()=>{localStorage.removeItem('ekCfg');db=null;show('scConfig');};
+
+// Auto-connect
+window.addEventListener('DOMContentLoaded',()=>{
+  const saved=localStorage.getItem('ekCfg');
+  if(saved){
+    try{
+      const cfg=JSON.parse(saved);
+      document.getElementById('cfgKey').value=cfg.apiKey||'';
+      document.getElementById('cfgAuth').value=cfg.authDomain||'';
+      document.getElementById('cfgDb').value=cfg.databaseURL||'';
+      document.getElementById('cfgProj').value=cfg.projectId||'';
+      if(cfg.apiKey&&cfg.databaseURL){
+        const app=initializeApp(cfg);
+        db=getDatabase(app);
+        show('scHome');
+        toast('✅ Firebase พร้อมแล้ว');
+      }
+    }catch(e){}
+  }
+});
+
+// ════════════════════════════════
+// LOBBY
+// ════════════════════════════════
+window.goCreate=()=>show('scCreate');
+window.goJoin=()=>show('scJoin');
+
+window.createRoom=async function(){
+  if(!db){toast('ยังไม่ได้เชื่อมต่อ Firebase');return;}
+  const name=document.getElementById('createName').value.trim()||'ผู้เล่น 1';
+  myName=name;myUid=uid();isHost=true;roomId=rnd4();
+  const initState={
+    phase:'lobby',
+    host:myUid,
+    players:{[myUid]:{name,uid:myUid,order:0,alive:true,cardCount:0}},
+    playerOrder:[myUid],
+    deck:[],hands:{},discard:[],
+    currentTurn:null,turnIndex:0,drawsRequired:1,
+    pendingAction:null,log:[],
+    createdAt:Date.now(),
+  };
+  roomRef=ref(db,`ek_rooms/${roomId}`);
+  await set(roomRef,initState);
+  document.getElementById('lobbyCode').textContent=roomId;
+  show('scLobby');
+  subscribeRoom();
+};
+
+window.joinRoom=async function(){
+  if(!db){toast('ยังไม่ได้เชื่อมต่อ Firebase');return;}
+  const name=document.getElementById('joinName').value.trim()||'ผู้เล่น';
+  const code=document.getElementById('joinCode').value.trim().toUpperCase();
+  if(!code||code.length!==4){toast('กรอกโค้ด 4 ตัว');return;}
+  myName=name;myUid=uid();isHost=false;roomId=code;
+  roomRef=ref(db,`ek_rooms/${roomId}`);
+  const snap=await get(roomRef);
+  if(!snap.exists()){toast('❌ ไม่พบห้องนี้');return;}
+  const s=snap.val();
+  if(s.phase!=='lobby'){toast('เกมเริ่มไปแล้ว');return;}
+  if(Object.keys(s.players||{}).length>=8){toast('ห้องเต็มแล้ว (8 คน)');return;}
+  const order=Object.keys(s.players||{}).length;
+  await update(roomRef,{
+    [`players/${myUid}`]:{name,uid:myUid,order,alive:true,cardCount:0},
+    playerOrder:[...(s.playerOrder||[]),myUid],
+  });
+  document.getElementById('lobbyCode').textContent=code;
+  show('scLobby');
+  subscribeRoom();
+};
+
+function subscribeRoom(){
+  if(!roomRef)return;
+  const unsub=onValue(roomRef,snap=>{
+    if(!snap.exists())return;
+    G=snap.val();
+    syncAll(G);
+  });
+  unsubFns.push(()=>off(roomRef));
+}
+
+function syncAll(s){
+  if(s.phase==='lobby')renderLobby(s);
+  else if(s.phase==='playing'){
+    renderGame(s);
+    if(s.pendingAction)startNopeWindow(s.pendingAction);
+    else{clearTimeout(_nopeTimerHandle);_nopeActionTs=null;}
+  }
+  else if(s.phase==='gameover')renderGameover(s);
+}
+
+// ════════════════════════════════
+// LOBBY RENDER
+// ════════════════════════════════
+function renderLobby(s){
+  show('scLobby');
+  const players=Object.values(s.players||{}).sort((a,b)=>a.order-b.order);
+  document.getElementById('lobbyCount').textContent=players.length;
+  const container=document.getElementById('lobbyPlayers');
+  container.innerHTML=players.map((p,i)=>`
+    <div class="lp-row">
+      <div class="lp-avatar ${playerColor(i)}">${p.name[0].toUpperCase()}</div>
+      <div class="lp-name">${p.name}</div>
+      ${s.host===p.uid?'<div class="lp-host-badge">HOST</div>':''}
+    </div>
+  `).join('');
+  // waiting slots
+  for(let i=players.length;i<8;i++){
+    container.innerHTML+=`<div class="lp-row"><div class="lp-empty"><div class="dot-pulse"><span></span><span></span><span></span></div> รอผู้เล่น...</div></div>`;
+  }
+  const canStart=players.length>=2&&myUid===s.host;
+  document.getElementById('startBtn').disabled=!canStart;
+  if(!canStart&&players.length<2)
+    document.getElementById('startHint').textContent='ต้องการอย่างน้อย 2 คน · รอเพื่อนเข้าร่วม';
+  else if(canStart)
+    document.getElementById('startHint').textContent='พร้อมเริ่ม!';
+}
+
+// ════════════════════════════════
+// HOST START
+// ════════════════════════════════
+window.hostStartGame=async function(){
+  if(!G||G.host!==myUid)return;
+  const players=Object.values(G.players).sort((a,b)=>a.order-b.order);
+  const order=shuffle(players.map(p=>p.uid));
+  let deck=buildDeck(players.length);
+  const{hands,deck:deckAfterDeal}=buildInitialHands(players,deck);
+  const handCounts={};
+  order.forEach(uid=>handCounts[uid]=hands[uid].length);
+  // Store hands in DB (each player's hand is their own)
+  const updates={
+    phase:'playing',
+    playerOrder:order,
+    deck:deckAfterDeal,
+    discard:[],
+    currentTurn:order[0],
+    turnIndex:0,
+    drawsRequired:1,
+    pendingAction:null,
+    log:[{msg:`🐱💣 เกมเริ่มแล้ว! มี ${players.length} คน`,ts:Date.now()}],
+  };
+  // Update each player's card count and alive status
+  order.forEach((uid,i)=>{
+    updates[`players/${uid}/order`]=i;
+    updates[`players/${uid}/alive`]=true;
+    updates[`players/${uid}/cardCount`]=hands[uid].length;
+  });
+  // Store hands
+  order.forEach(uid=>{
+    updates[`hands/${uid}`]=hands[uid];
+  });
+  await update(roomRef,updates);
+};
+
+// ════════════════════════════════
+// GAME RENDER
+// ════════════════════════════════
+function renderGame(s){
+  show('scGame');
+
+  const players=s.playerOrder.map(uid=>s.players[uid]).filter(Boolean);
+  const myHand=(s.hands&&s.hands[myUid])||[];
+  const isMyTurn=s.currentTurn===myUid;
+  const myAlive=s.players[myUid]?.alive!==false;
+
+  // Players mini
+  document.getElementById('playersMini').innerHTML=players.map((p,i)=>`
+    <div class="pm-chip ${s.currentTurn===p.uid?'active-turn':''} ${!p.alive?'dead':''}">
+      <div class="pm-dot ${dotColor(i)}"></div>
+      <span class="pm-name">${p.name}${p.uid===myUid?' (คุณ)':''}</span>
+      <span class="pm-cards">🂠${p.cardCount||0}</span>
+    </div>
+  `).join('');
+
+  // Deck
+  document.getElementById('deckCount').textContent=s.deck?.length||0;
+  const canDraw=isMyTurn&&myAlive&&!s.pendingAction&&!(s.drawsRequired>1&&false);
+  document.getElementById('deckPile').className=`deck-pile${canDraw?' can-draw':''}`;
+
+  // Discard top
+  const topDiscard=s.discard&&s.discard.length>0?s.discard[s.discard.length-1]:null;
+  document.getElementById('discardTop').textContent=topDiscard?CARD_DEF[topDiscard.type]?.emoji||'🂠':'🂠';
+
+  // Log
+  const logBox=document.getElementById('logBox');
+  if(s.log){
+    const entries=Object.values(s.log).slice(-20);
+    logBox.innerHTML=entries.map(e=>`<div class="log-entry">${e.msg}</div>`).join('');
+    logBox.scrollTop=logBox.scrollHeight;
+  }
+
+  // My hand
+  renderHand(myHand,isMyTurn&&myAlive);
+
+  // Action bar
+  const currentPlayer=s.players[s.currentTurn];
+  document.getElementById('turnName').textContent=
+    s.currentTurn===myUid?'เทิร์นของคุณ! 🔥':`เทิร์นของ ${currentPlayer?.name||'—'}`;
+  document.getElementById('turnSub').textContent=
+    isMyTurn?`หยิบไพ่ ${s.drawsRequired||1} ใบ หรือเล่นไพ่ก่อน`:'รอเทิร์นของคุณ...';
+
+  const playBtn=document.getElementById('playBtn');
+  playBtn.disabled=!isMyTurn||!myAlive||selectedCards.length===0;
+
+  // NOPE button: show if pending action from someone else
+  const nopeBtn=document.getElementById('nopeBtn');
+  if(s.pendingAction&&s.pendingAction.from!==myUid&&myAlive&&hasCard(myHand,'nope')){
+    nopeBtn.style.display='';
+    nopeBtn.disabled=false;
+  } else {
+    nopeBtn.style.display='none';
+  }
+
+  // Pending actions for ME
+  handlePendingAction(s,myHand,isMyTurn,myAlive);
+}
+
+function renderHand(hand,active){
+  document.getElementById('handCount').textContent=hand.length;
+  const container=document.getElementById('handCards');
+  // Count duplicates per type for badge
+  const typeCounts={};
+  hand.forEach(c=>{typeCounts[c.type]=(typeCounts[c.type]||0)+1;});
+  const shownBadge={};
+  container.innerHTML=hand.map(card=>{
+    const def=CARD_DEF[card.type]||{emoji:'❓',name:card.type};
+    const sel=selectedCards.includes(card.id);
+    const count=typeCounts[card.type]||1;
+    const showBadge=count>1&&!shownBadge[card.type];
+    if(count>1)shownBadge[card.type]=true;
+    return `<div class="pcard${active?'':' disabled'}${sel?' selected':''}"
+      data-type="${card.type}" data-id="${card.id}"
+      onclick="${active?`toggleCard('${card.id}')`:''}"
+      title="${def.name}">
+      ${showBadge?`<div class="pcard-count">×${count}</div>`:''}
+      <span class="pcard-emoji">${def.emoji}</span>
+      <span class="pcard-name">${def.name}</span>
+    </div>`;
+  }).join('');
+}
+
+window.toggleCard=function(id){
+  const isMyTurn=G?.currentTurn===myUid;
+  const myAlive=G?.players[myUid]?.alive!==false;
+  const myHand=(G?.hands&&G?.hands[myUid])||[];
+  if(!isMyTurn||!myAlive){
+    // Show card info instead
+    const card=myHand.find(c=>c.id===id);
+    if(card){
+      const def=CARD_DEF[card.type]||{emoji:'❓',name:card.type,desc:''};
+      modal(`
+        <div style="text-align:center;margin-bottom:.8rem;font-size:2.5rem">${def.emoji}</div>
+        <div class="modal-title">${def.name}</div>
+        <div class="modal-sub">${def.desc||''}</div>
+        <button class="btn btn-outline" onclick="closeModal()">ปิด</button>
+      `);
+    }
+    return;
+  }
+  const idx=selectedCards.indexOf(id);
+  if(idx>=0)selectedCards.splice(idx,1);
+  else selectedCards.push(id);
+  renderHand(myHand,isMyTurn&&myAlive);
+  document.getElementById('playBtn').disabled=selectedCards.length===0||!isMyTurn;
+};
+
+function hasCard(hand,type){return hand.some(c=>c.type===type);}
+
+// ════════════════════════════════
+// DRAW CARD
+// ════════════════════════════════
+let _drawing=false;
+window.drawCard=async function(){
+  if(_drawing)return;
+  if(!G||G.currentTurn!==myUid)return;
+  if(!G.players[myUid]?.alive)return;
+  if(G.pendingAction)return;
+  _drawing=true;
+  setTimeout(()=>{_drawing=false;},1500);
+  const deck=[...(G.deck||[])];
+  if(deck.length===0){toast('ไพ่หมดกองแล้ว!');return;}
+  const drawn=deck.shift();
+  const myHand=[...(G.hands[myUid]||[])];
+
+  if(drawn.type==='exploding'){
+    _drawing=false; // reset guard for defuse placement
+    // Check for defuse
+    if(hasCard(myHand,'defuse')){
+      // Must play defuse
+      const defuseCard=myHand.find(c=>c.type==='defuse');
+      const newHand=myHand.filter(c=>c.id!==defuseCard.id);
+      const newDiscard=[...(G.discard||[]),defuseCard];
+      await addLog(`💣 ${G.players[myUid].name} หยิบ Exploding Kitten! ใช้ Defuse รอด 😅`);
+      // Ask where to insert bomb
+      showDefusePlacement(deck,newHand,newDiscard);
+    } else {
+      // DEAD
+      const newDiscard=[...(G.discard||[]),drawn];
+      myHand.push(drawn); // briefly
+      await eliminatePlayer(myUid,deck,myHand,newDiscard);
+    }
+  } else {
+    myHand.push(drawn);
+    const drawsLeft=(G.drawsRequired||1)-1;
+    const updates={
+      [`hands/${myUid}`]:myHand,
+      [`players/${myUid}/cardCount`]:myHand.length,
+      deck,
+      [`discard`]:[...(G.discard||[]),{type:'_draw',id:'x'}].slice(-10),
+    };
+    await addLog(`🂠 ${G.players[myUid].name} หยิบไพ่`);
+    if(drawsLeft<=0){
+      Object.assign(updates,advanceTurn(G));
+    } else {
+      updates.drawsRequired=drawsLeft;
+    }
+    await update(roomRef,updates);
+  }
+};
+
+function showDefusePlacement(deck,newHand,newDiscard){
+  const deckLen=deck.length;
+  let opts='';
+  for(let i=0;i<=deckLen;i++){
+    let label=i===0?'บนสุด (ใบหน้าต่อไป)':i===deckLen?'ล่างสุด':`ตำแหน่ง ${i+1}`;
+    opts+=`<div class="modal-option" onclick="placeBomb(${i})">${label}</div>`;
+  }
+  modal(`
+    <div class="modal-title">💣 วาง Exploding Kitten กลับกอง</div>
+    <div class="modal-sub">เลือกตำแหน่งที่จะซ่อนระเบิด (ไม่มีใครเห็น!)</div>
+    <div class="modal-btns">${opts}</div>
+  `);
+  // store temp state
+  window._defuseState={deck,newHand,newDiscard};
+}
+
+window.placeBomb=async function(pos){
+  closeModal();
+  const{deck,newHand,newDiscard}=window._defuseState;
+  const bomb={type:'exploding',id:'bomb_'+Date.now()};
+  deck.splice(pos,0,bomb);
+  const updates={
+    [`hands/${myUid}`]:newHand,
+    [`players/${myUid}/cardCount`]:newHand.length,
+    deck,discard:newDiscard,
+  };
+  Object.assign(updates,advanceTurn(G));
+  await update(roomRef,updates);
+};
+
+async function eliminatePlayer(deadUid,deck,hand,discard){
+  const alivePlayers=G.playerOrder.filter(u=>G.players[u]?.alive&&u!==deadUid);
+  await addLog(`💥 ${G.players[deadUid].name} โดน Exploding Kitten! ออกจากเกม 😵`);
+  const updates={
+    [`players/${deadUid}/alive`]:false,
+    [`players/${deadUid}/cardCount`]:0,
+    [`hands/${deadUid}`]:[],
+    deck,discard,
+  };
+  if(alivePlayers.length<=1){
+    // Game over
+    updates.phase='gameover';
+    updates.winner=alivePlayers[0]||null;
+    const loserOrder=G.playerOrder.filter(u=>u!==alivePlayers[0]).reverse();
+    updates.ranking=[alivePlayers[0],...loserOrder];
+    await addLog(`🏆 ${G.players[alivePlayers[0]]?.name} ชนะ!`);
+  } else {
+    Object.assign(updates,advanceTurnAfterDeath(G,deadUid,alivePlayers));
+  }
+  await update(roomRef,updates);
+}
+
+// ════════════════════════════════
+// PLAY CARD
+// ════════════════════════════════
+window.playSelected=async function(){
+  if(selectedCards.length===0)return;
+  if(G.currentTurn!==myUid)return;
+  const myHand=[...(G.hands[myUid]||[])];
+  const cards=selectedCards.map(id=>myHand.find(c=>c.id===id)).filter(Boolean);
+  if(cards.length===0)return;
+
+  // Pair play (2 same-type cat cards = steal random)
+  if(cards.length===2&&cards[0].type===cards[1].type&&cards[0].type.startsWith('cat')){
+    await playCatPair(cards,myHand);return;
+  }
+  // Triple play (3 same cat = demand specific)
+  if(cards.length===3&&cards.every(c=>c.type===cards[0].type)&&cards[0].type.startsWith('cat')){
+    await playCatTriple(cards,myHand);return;
+  }
+  if(cards.length!==1){toast('เล่นได้ทีละ 1 ใบ (หรือ 2-3 ใบแมวเหมือนกัน)');return;}
+
+  const card=cards[0];
+  const newHand=myHand.filter(c=>!selectedCards.includes(c.id));
+  selectedCards=[];
+
+  switch(card.type){
+    case'skip': await playSkip(card,newHand);break;
+    case'attack': await playAttack(card,newHand);break;
+    case'shuffle': await playShuffle(card,newHand);break;
+    case'see_future': await playSeeFuture(card,newHand);break;
+    case'alter_future': await playAlterFuture(card,newHand);break;
+    case'favor': await playFavor(card,newHand);break;
+    case'nope': toast('Nope ใช้ตอบโต้แอ็กชั่นคนอื่น');selectedCards=[];renderHand(myHand,true);break;
+    case'reverse': await playReverse(card,newHand);break;
+    case'targeted_attack': await playTargetedAttack(card,newHand);break;
+    case'exploding': toast('💣 เล่น Exploding Kitten ตรงๆ ไม่ได้!');renderHand(myHand,true);break;
+    case'defuse': toast('🙅 Defuse ใช้ตอนหยิบระเบิดเท่านั้น');renderHand(myHand,true);break;
+    default: toast('ไม่รู้จักไพ่นี้');
+  }
+};
+
+// SKIP — cancels 1 draw obligation, if under attack (draws>1) skip one draw
+async function playSkip(card,newHand){
+  const discard=[...(G.discard||[]),card];
+  const drawsLeft=Math.max((G.drawsRequired||1)-1,0);
+  await addLog(`⏭️ ${G.players[myUid].name} เล่น Skip`);
+  if(drawsLeft>0){
+    // Still has draw obligations — just reduce count
+    await update(roomRef,{
+      [`hands/${myUid}`]:newHand,[`players/${myUid}/cardCount`]:newHand.length,
+      discard,drawsRequired:drawsLeft,
+    });
+  } else {
+    // No more draws needed — advance turn
+    await update(roomRef,{
+      [`hands/${myUid}`]:newHand,[`players/${myUid}/cardCount`]:newHand.length,
+      discard,...advanceTurn(G),
+    });
+  }
+}
+
+// ATTACK
+async function playAttack(card,newHand){
+  const discard=[...(G.discard||[]),card];
+  const draws=(G.drawsRequired||1)+1;
+  await addLog(`🎯 ${G.players[myUid].name} เล่น Attack! คนถัดไปต้องหยิบ ${draws} ใบ`);
+  const order=G.playerOrder;
+  const cur=order.indexOf(G.currentTurn);
+  let nextIdx=cur;
+  for(let i=1;i<=order.length;i++){
+    const idx=(cur+i)%order.length;
+    if(G.players[order[idx]]?.alive){nextIdx=idx;break;}
+  }
+  await update(roomRef,{
+    [`hands/${myUid}`]:newHand,[`players/${myUid}/cardCount`]:newHand.length,
+    discard,currentTurn:order[nextIdx],turnIndex:nextIdx,drawsRequired:draws,
+  });
+}
+
+// SHUFFLE
+async function playShuffle(card,newHand){
+  const deck=shuffle([...(G.deck||[])]);
+  const discard=[...(G.discard||[]),card];
+  await addLog(`🔀 ${G.players[myUid].name} เล่น Shuffle`);
+  await update(roomRef,{
+    [`hands/${myUid}`]:newHand,[`players/${myUid}/cardCount`]:newHand.length,
+    discard,deck,
+  });
+}
+
+// SEE THE FUTURE
+async function playSeeFuture(card,newHand){
+  const deck=G.deck||[];
+  const top3=deck.slice(0,3);
+  const discard=[...(G.discard||[]),card];
+  await addLog(`👀 ${G.players[myUid].name} ดู 3 ใบบนสุด`);
+  await update(roomRef,{
+    [`hands/${myUid}`]:newHand,[`players/${myUid}/cardCount`]:newHand.length,discard,
+  });
+  // Show only to this player
+  modal(`
+    <div class="modal-title">👀 See the Future</div>
+    <div class="modal-sub">3 ใบบนสุดของกอง (บนสุด → ล่าง)</div>
+    <div class="see-future-cards">
+      ${top3.length===0?'<p style="color:var(--muted)">กองว่าง</p>':top3.map((c,i)=>{
+        const def=CARD_DEF[c.type]||{emoji:'❓',name:c.type};
+        return`<div class="pcard" data-type="${c.type}" style="cursor:default">
+          <span style="font-size:9px;color:var(--muted)">#${i+1}</span>
+          <span class="pcard-emoji">${def.emoji}</span>
+          <span class="pcard-name">${def.name}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <button class="btn btn-outline" onclick="closeModal()">ปิด</button>
+  `);
+}
+
+// ALTER THE FUTURE
+async function playAlterFuture(card,newHand){
+  const deck=[...(G.deck||[])];
+  const top3=deck.slice(0,3);
+  const discard=[...(G.discard||[]),card];
+  await addLog(`✏️ ${G.players[myUid].name} เล่น Alter the Future`);
+  await update(roomRef,{
+    [`hands/${myUid}`]:newHand,[`players/${myUid}/cardCount`]:newHand.length,discard,
+  });
+  if(top3.length===0){toast('กองว่าง');return;}
+  // Let player drag-reorder (simple: pick new order)
+  let order=[0,1,2].slice(0,top3.length);
+  function renderAlter(){
+    const html=`
+      <div class="modal-title">✏️ Alter the Future</div>
+      <div class="modal-sub">เรียงลำดับใหม่ (กดเพื่อสลับ)</div>
+      <div class="see-future-cards" id="alterCards">
+        ${order.map((ci,pos)=>{
+          const c=top3[ci];const def=CARD_DEF[c.type]||{emoji:'❓',name:c.type};
+          return`<div class="pcard" data-type="${c.type}" style="cursor:pointer" onclick="alterSwap(${pos})">
+            <span style="font-size:9px;color:var(--muted)">#${pos+1}</span>
+            <span class="pcard-emoji">${def.emoji}</span>
+            <span class="pcard-name">${def.name}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="btn btn-fire" style="margin-top:.8rem" onclick="confirmAlter()">ยืนยัน</button>
+    `;
+    document.querySelector('#activeModal .modal').innerHTML=html;
+  }
+  window.alterSwap=function(pos){
+    // rotate: move this card to end
+    const item=order.splice(pos,1)[0];
+    order.push(item);
+    renderAlter();
+  };
+  window.confirmAlter=async function(){
+    const newTop=order.map(i=>top3[i]);
+    const restDeck=deck.slice(top3.length);
+    const newDeck=[...newTop,...restDeck];
+    await update(roomRef,{deck:newDeck});
+    closeModal();
+    await addLog(`✏️ เรียงกองใหม่แล้ว`);
+  };
+  modal('');
+  renderAlter();
+}
+
+// FAVOR
+async function playFavor(card,newHand){
+  const alivePlayers=G.playerOrder.filter(u=>G.players[u]?.alive&&u!==myUid);
+  if(alivePlayers.length===0){toast('ไม่มีคนอื่น');return;}
+  const discard=[...(G.discard||[]),card];
+  modal(`
+    <div class="modal-title">🙏 Favor</div>
+    <div class="modal-sub">เลือกคนที่จะให้ส่งไพ่ 1 ใบให้คุณ</div>
+    <div class="modal-btns">
+      ${alivePlayers.map(u=>`
+        <div class="modal-option" onclick="sendFavorRequest('${u}')">
+          ${G.players[u].name} (${G.players[u].cardCount||0} ใบ)
+        </div>
+      `).join('')}
+    </div>
+  `);
+  window._favorCard=card;window._favorHand=newHand;window._favorDiscard=discard;
+}
+
+window.sendFavorRequest=async function(targetUid){
+  closeModal();
+  const card=window._favorCard,newHand=window._favorHand,discard=window._favorDiscard;
+  await addLog(`🙏 ${G.players[myUid].name} ขอไพ่จาก ${G.players[targetUid].name}`);
+  await update(roomRef,{
+    [`hands/${myUid}`]:newHand,[`players/${myUid}/cardCount`]:newHand.length,
+    discard,
+    pendingAction:{type:'favor',from:myUid,to:targetUid,ts:Date.now()},
+  });
+};
+
+// REVERSE
+async function playReverse(card,newHand){
+  const discard=[...(G.discard||[]),card];
+  await addLog(`🔄 ${G.players[myUid].name} เล่น Reverse! ลำดับกลับทาง`);
+  const newOrder=[...G.playerOrder].reverse();
+  const myNewIdx=newOrder.indexOf(myUid);
+  const nextIdx=(myNewIdx+1)%newOrder.length;
+  // find next alive
+  let nextTurnIdx=nextIdx;
+  for(let i=0;i<newOrder.length;i++){
+    const u=newOrder[(myNewIdx+1+i)%newOrder.length];
+    if(G.players[u]?.alive){nextTurnIdx=(myNewIdx+1+i)%newOrder.length;break;}
+  }
+  await update(roomRef,{
+    [`hands/${myUid}`]:newHand,[`players/${myUid}/cardCount`]:newHand.length,
+    discard,playerOrder:newOrder,
+    currentTurn:newOrder[nextTurnIdx],turnIndex:nextTurnIdx,drawsRequired:1,
+  });
+}
+
+// TARGETED ATTACK
+async function playTargetedAttack(card,newHand){
+  const alivePlayers=G.playerOrder.filter(u=>G.players[u]?.alive&&u!==myUid);
+  if(alivePlayers.length===0){toast('ไม่มีคนอื่น');return;}
+  const discard=[...(G.discard||[]),card];
+  modal(`
+    <div class="modal-title">💢 Targeted Attack</div>
+    <div class="modal-sub">เลือกคนที่จะถูกบังคับหยิบ 2 ใบ</div>
+    <div class="modal-btns">
+      ${alivePlayers.map(u=>`
+        <div class="modal-option" onclick="sendTargetedAttack('${u}')">
+          ${G.players[u].name}
+        </div>
+      `).join('')}
+    </div>
+  `);
+  window._taCard=card;window._taHand=newHand;window._taDiscard=discard;
+}
+
+window.sendTargetedAttack=async function(targetUid){
+  closeModal();
+  const draws=(G.drawsRequired||1)+1;
+  await addLog(`💢 ${G.players[myUid].name} โจมตี ${G.players[targetUid].name}! ต้องหยิบ ${draws} ใบ`);
+  await update(roomRef,{
+    [`hands/${myUid}`]:window._taHand,
+    [`players/${myUid}/cardCount`]:window._taHand.length,
+    discard:window._taDiscard,
+    currentTurn:targetUid,
+    drawsRequired:draws,
+  });
+};
+
+// CAT PAIR — steal random card
+async function playCatPair(cards,myHand){
+  const alivePlayers=G.playerOrder.filter(u=>G.players[u]?.alive&&u!==myUid&&(G.players[u].cardCount||0)>0);
+  if(alivePlayers.length===0){toast('ไม่มีคนอื่นที่มีไพ่');return;}
+  const def=CARD_DEF[cards[0].type]||{emoji:'🐱'};
+  const discard=[...(G.discard||[]),...cards];
+  const newHand=myHand.filter(c=>!selectedCards.includes(c.id));
+  selectedCards=[];
+  modal(`
+    <div class="modal-title">${def.emoji}${def.emoji} Cat Pair!</div>
+    <div class="modal-sub">เลือกคนที่จะขโมยไพ่สุ่ม 1 ใบ</div>
+    <div class="modal-btns">
+      ${alivePlayers.map(u=>`
+        <div class="modal-option" onclick="stealRandom('${u}')">
+          ${G.players[u].name} (${G.players[u].cardCount||0} ใบ)
+        </div>
+      `).join('')}
+    </div>
+  `);
+  window._stealHand=newHand;window._stealDiscard=discard;
+}
+
+window.stealRandom=async function(targetUid){
+  closeModal();
+  const targetHand=[...(G.hands[targetUid]||[])];
+  if(targetHand.length===0){toast('ไม่มีไพ่ให้ขโมย');return;}
+  const stolenIdx=Math.floor(Math.random()*targetHand.length);
+  const stolen=targetHand.splice(stolenIdx,1)[0];
+  const myNewHand=[...window._stealHand,stolen];
+  await addLog(`🐱 ${G.players[myUid].name} ขโมยไพ่จาก ${G.players[targetUid].name}! (${CARD_DEF[stolen.type]?.name||stolen.type})`);
+  await update(roomRef,{
+    [`hands/${myUid}`]:myNewHand,[`players/${myUid}/cardCount`]:myNewHand.length,
+    [`hands/${targetUid}`]:targetHand,[`players/${targetUid}/cardCount`]:targetHand.length,
+    discard:window._stealDiscard,
+  });
+};
+
+// CAT TRIPLE — demand specific
+async function playCatTriple(cards,myHand){
+  const alivePlayers=G.playerOrder.filter(u=>G.players[u]?.alive&&u!==myUid&&(G.players[u].cardCount||0)>0);
+  if(alivePlayers.length===0){toast('ไม่มีคนอื่น');return;}
+  const def=CARD_DEF[cards[0].type]||{emoji:'🐱'};
+  const discard=[...(G.discard||[]),...cards];
+  const newHand=myHand.filter(c=>!selectedCards.includes(c.id));
+  selectedCards=[];
+  modal(`
+    <div class="modal-title">${def.emoji}×3 Cat Triple!</div>
+    <div class="modal-sub">เลือกผู้เล่น แล้วระบุชื่อไพ่ที่ต้องการ</div>
+    <div class="modal-btns">
+      ${alivePlayers.map(u=>`
+        <div class="modal-option" onclick="demandCard('${u}')">
+          ${G.players[u].name}
+        </div>
+      `).join('')}
+    </div>
+  `);
+  window._triHand=newHand;window._triDiscard=discard;
+}
+
+window.demandCard=function(targetUid){
+  const types=Object.keys(CARD_DEF).filter(t=>t!=='exploding'&&t!=='defuse');
+  document.querySelector('#activeModal .modal').innerHTML=`
+    <div class="modal-title">ระบุไพ่ที่ต้องการ</div>
+    <div class="modal-sub">จาก ${G.players[targetUid].name}</div>
+    <div class="modal-btns" style="max-height:280px;overflow-y:auto;">
+      ${types.map(t=>{const d=CARD_DEF[t];return`
+        <div class="modal-option" onclick="sendDemand('${targetUid}','${t}')">
+          ${d.emoji} ${d.name}
+        </div>`;}).join('')}
+    </div>
+  `;
+  window._demandTarget=targetUid;
+};
+
+window.sendDemand=async function(targetUid,cardType){
+  closeModal();
+  const targetHand=[...(G.hands[targetUid]||[])];
+  const cardIdx=targetHand.findIndex(c=>c.type===cardType);
+  const def=CARD_DEF[cardType]||{name:cardType};
+  if(cardIdx<0){
+    toast(`${G.players[targetUid].name} ไม่มีไพ่ ${def.name}`);
+    await addLog(`🐱 ${G.players[myUid].name} ขอ ${def.name} แต่ ${G.players[targetUid].name} ไม่มี!`);
+    await update(roomRef,{[`hands/${myUid}`]:window._triHand,[`players/${myUid}/cardCount`]:window._triHand.length,discard:window._triDiscard});
+    return;
+  }
+  const stolen=targetHand.splice(cardIdx,1)[0];
+  const myNewHand=[...window._triHand,stolen];
+  await addLog(`🐱 ${G.players[myUid].name} ขอ ${def.name} จาก ${G.players[targetUid].name} ได้แล้ว!`);
+  await update(roomRef,{
+    [`hands/${myUid}`]:myNewHand,[`players/${myUid}/cardCount`]:myNewHand.length,
+    [`hands/${targetUid}`]:targetHand,[`players/${targetUid}/cardCount`]:targetHand.length,
+    discard:window._triDiscard,
+  });
+};
+
+// ════════════════════════════════
+// NOPE + WINDOW TIMER
+// ════════════════════════════════
+let _nopeTimerHandle=null;
+let _nopeActionTs=null;
+
+function startNopeWindow(pa){
+  if(!pa||pa.ts===_nopeActionTs)return;
+  _nopeActionTs=pa.ts;
+  clearTimeout(_nopeTimerHandle);
+  // Show nope countdown toast for non-initiator
+  if(pa.from!==myUid){
+    toast(`🙈 NOPE ได้ภายใน 5 วิ!`,5000);
+  }
+  _nopeTimerHandle=setTimeout(async()=>{
+    // Check if pendingAction still exists (same ts) - resolve it
+    if(!G?.pendingAction||G.pendingAction.ts!==pa.ts)return;
+    // Only host resolves to avoid race - or current turn player
+    if(G.host===myUid||G.currentTurn===pa.from){
+      await resolvePendingAction(G.pendingAction);
+    }
+  },5000);
+}
+
+async function resolvePendingAction(pa){
+  if(!pa)return;
+  // pendingAction already handled by specific card logic (favor, etc.)
+  // This is a safety cleanup
+  if(pa.type==='favor'){
+    // If favor target hasn't responded, skip
+    await addLog(`⏰ หมดเวลา Nope! ดำเนินการต่อ`);
+  }
+  await update(roomRef,{pendingAction:null});
+}
+
+window.playNope=async function(){
+  if(!G?.pendingAction)return;
+  const myHand=[...(G.hands[myUid]||[])];
+  const nopeCard=myHand.find(c=>c.type==='nope');
+  if(!nopeCard)return;
+  const newHand=myHand.filter(c=>c.id!==nopeCard.id);
+  const discard=[...(G.discard||[]),nopeCard];
+  await addLog(`🙈 ${G.players[myUid].name} เล่น NOPE! ยกเลิกแอ็กชั่นก่อนหน้า`);
+  await update(roomRef,{
+    [`hands/${myUid}`]:newHand,[`players/${myUid}/cardCount`]:newHand.length,
+    discard,pendingAction:null,
+  });
+};
+
+// ════════════════════════════════
+// PENDING ACTIONS
+// ════════════════════════════════
+function handlePendingAction(s,myHand,isMyTurn,myAlive){
+  const pa=s.pendingAction;
+  if(!pa)return;
+  // Favor: if I'm the target, I must give a card
+  if(pa.type==='favor'&&pa.to===myUid&&myAlive){
+    const nonExplode=myHand.filter(c=>c.type!=='exploding');
+    if(nonExplode.length===0){
+      // auto give nothing
+      update(roomRef,{pendingAction:null});return;
+    }
+    modal(`
+      <div class="modal-title">🙏 ${s.players[pa.from]?.name} ขอไพ่จากคุณ</div>
+      <div class="modal-sub">เลือก 1 ใบที่จะให้</div>
+      <div class="modal-btns">
+        ${nonExplode.map(c=>{const d=CARD_DEF[c.type]||{emoji:'❓',name:c.type};
+          return`<div class="modal-option" onclick="giveFavor('${c.id}','${pa.from}')">${d.emoji} ${d.name}</div>`;
+        }).join('')}
+      </div>
+    `);
+  }
+}
+
+window.giveFavor=async function(cardId,toUid){
+  closeModal();
+  const myHand=[...(G.hands[myUid]||[])];
+  const card=myHand.find(c=>c.id===cardId);
+  if(!card)return;
+  const newMyHand=myHand.filter(c=>c.id!==cardId);
+  const theirHand=[...(G.hands[toUid]||[]),card];
+  await addLog(`🙏 ${G.players[myUid].name} ส่ง ${CARD_DEF[card.type]?.name||card.type} ให้ ${G.players[toUid].name}`);
+  await update(roomRef,{
+    [`hands/${myUid}`]:newMyHand,[`players/${myUid}/cardCount`]:newMyHand.length,
+    [`hands/${toUid}`]:theirHand,[`players/${toUid}/cardCount`]:theirHand.length,
+    pendingAction:null,
+  });
+};
+
+// ════════════════════════════════
+// TURN MANAGEMENT
+// ════════════════════════════════
+function advanceTurn(s){
+  const order=s.playerOrder;
+  const cur=order.indexOf(s.currentTurn);
+  let next=cur;
+  for(let i=1;i<=order.length;i++){
+    const idx=(cur+i)%order.length;
+    if(s.players[order[idx]]?.alive){next=idx;break;}
+  }
+  return{currentTurn:order[next],turnIndex:next,drawsRequired:1};
+}
+
+function advanceTurnAfterDeath(s,deadUid,alivePlayers){
+  const curIdx=s.playerOrder.indexOf(s.currentTurn);
+  let nextUid=alivePlayers[0];
+  for(let i=1;i<=s.playerOrder.length;i++){
+    const u=s.playerOrder[(curIdx+i)%s.playerOrder.length];
+    if(s.players[u]?.alive&&u!==deadUid){nextUid=u;break;}
+  }
+  const nextIdx=s.playerOrder.indexOf(nextUid);
+  return{currentTurn:nextUid,turnIndex:nextIdx,drawsRequired:1};
+}
+
+// ════════════════════════════════
+// LOG HELPER
+// ════════════════════════════════
+async function addLog(msg){
+  const log=[...(G?.log||[]),{msg,ts:Date.now()}].slice(-30);
+  await update(roomRef,{log});
+}
+
+// ════════════════════════════════
+// GAMEOVER
+// ════════════════════════════════
+function renderGameover(s){
+  show('scGameover');
+  const ranking=s.ranking||[];
+  document.getElementById('goTitle').textContent=
+    s.winner?`${s.players[s.winner]?.name} ชนะ! 🎉`:'จบเกม!';
+  document.getElementById('goSub').textContent=
+    s.winner?`${s.players[s.winner]?.name} คือผู้รอดชีวิตคนสุดท้าย!`:'';
+  document.getElementById('goRanking').innerHTML=ranking.map((uid,i)=>`
+    <div class="go-rank-row">
+      <div class="go-rank-num">${i===0?'🏆':i+1}</div>
+      <div class="go-rank-name">${s.players[uid]?.name||uid}</div>
+      <div class="go-rank-status">${i===0?'ผู้รอดชีวิต 💪':'ระเบิด 💥'}</div>
+    </div>
+  `).join('');
+}
+
+window.playAgain=async function(){
+  unsubFns.forEach(f=>f());unsubFns=[];
+  selectedCards=[];
+  const snapshot=G; // capture before nulling
+  G=null;
+  if(isHost&&roomRef&&snapshot){
+    // Reset player alive + card counts
+    const ups={phase:'lobby',deck:[],hands:{},discard:[],
+      currentTurn:null,turnIndex:0,drawsRequired:1,pendingAction:null,log:[],
+      ranking:null,winner:null};
+    const players=snapshot.players||{};
+    Object.keys(players).forEach(u=>{
+      ups[`players/${u}/alive`]=true;
+      ups[`players/${u}/cardCount`]=0;
+    });
+    await update(roomRef,ups);
+    show('scLobby');
+    subscribeRoom();
+  } else {
+    show('scHome');
+  }
+};
+
+</script>
+</body>
+</html>
